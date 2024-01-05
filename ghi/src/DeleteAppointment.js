@@ -3,9 +3,10 @@ import dayjs from "dayjs";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateField } from '@mui/x-date-pickers/DateField';
+import deleteIcon from "./img/Delete.png"
 
 
-function EditAppointments() {
+function DeleteAppointment() {
 
   const [list, setList] = useState([]);
   const [currentList, setCurrentList] = useState([]);
@@ -90,6 +91,30 @@ function EditAppointments() {
     setCurrentList(newList)
   }
 
+  function areYouSure(id){
+    if (window.confirm('Are you sure you want to delete?')) {
+      // Delete it!
+      deleteEntry(id)
+    } else {
+      // Do nothing!
+    }
+  }
+
+  async function deleteEntry(id){
+    const fetchConfig = {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    const response = await fetch(`http://localhost:8000/appointments/${id}`, fetchConfig);
+
+    if (response.ok) {
+      fetchData();
+    }
+  }
+
   useEffect(() => {
     fetchData()
   }, []);
@@ -147,6 +172,7 @@ function EditAppointments() {
           <td>Category</td>
           <td>Reason</td>
           <td>Notes</td>
+          <td>Delete?</td>
         </tr>
         {currentList.map((i,num) => {
           return(
@@ -158,6 +184,7 @@ function EditAppointments() {
               <td>{i.humanCode}</td>
               <td>{i.reason}</td>
               <td>{i.notes}</td>
+              <td><img onClick={() => areYouSure(i.id)} className="penIcon" src={deleteIcon}></img></td>
             </tr>
           )
         })}
@@ -170,4 +197,4 @@ function EditAppointments() {
   );
 };
 
-export default EditAppointment;
+export default DeleteAppointment;

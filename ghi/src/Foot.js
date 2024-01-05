@@ -5,7 +5,7 @@ const Foot = () => {
         <footer className="bg-success bg-gradient" style={{textAlign: "center", padding: "0px"}}>
             <div style={{padding: "7px"}}></div>
             <div>
-                <span>Will Howe and Jacob Sullenszino - 2022-2023</span></div>
+                <span>Will Howe and Jacob Sullenszino - 2022-2024</span></div>
         </footer>
       </footer>
     </>

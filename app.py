@@ -31,6 +31,13 @@ def create_table():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS groups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            group_data TEXT NOT NULL
+        )
+    """)
+
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS roles (
@@ -49,6 +56,8 @@ def create_table():
             FOREIGN KEY (role_id) REFERENCES roles(id)
         )
     """)
+
+
     connection.commit()
     connection.close()
 
@@ -94,6 +103,7 @@ class AppointmentCreate(BaseModel):
 
 class Appointment(AppointmentCreate):
     id: int
+
 class StudentCreate(BaseModel):
     first: str
     last: str
@@ -102,12 +112,22 @@ class StudentCreate(BaseModel):
 
 class Student(StudentCreate):
     id: int
+
+class GroupCreate(BaseModel):
+    name: str
+    list: str
+
+class Group(GroupCreate):
+    id: int
+
 class CategoryCreate(BaseModel):
     code: str
     name: str
+    reasons: str
 
 class Category(CategoryCreate):
     id: int
+
 class AccountQueries:
     def create_acc(self, info: AccountIn, hashed_password: str) -> AccountOutWithPassword:
         try:
@@ -360,6 +380,39 @@ def delete_student(student_id: int):
     connection.commit()
     connection.close()
 
+
+def get_all_groups():
+    connection = create_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT id, group_data FROM groups")
+    groups = cursor.fetchall()
+    connection.close()
+
+    groups_list = []
+    for group in groups:
+        groups_dict = {"id": group[0], **json.loads(group[1])}
+        groups_list.append(groups_dict)
+    return groups_list
+
+def create_group(group: GroupCreate):
+    connection = create_connection()
+    cursor = connection.cursor()
+    group_data = json.dumps({"name": group.name, "list": group.list})
+    cursor.execute("INSERT INTO groups (group_data) VALUES (?)", (group_data,))
+    connection.commit()
+    group_id = cursor.lastrowid
+    connection.close()
+    return group_id
+
+def delete_group(group_id: int):
+    connection = create_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM groups WHERE id = ?", (group_id,))
+    connection.commit()
+    connection.close()
+
+
+
 def get_all_categorys():
     connection = create_connection()
     cursor = connection.cursor()
@@ -376,7 +429,7 @@ def get_all_categorys():
 def create_category(category: CategoryCreate):
     connection = create_connection()
     cursor = connection.cursor()
-    category_data = json.dumps({"code": category.code, "name": category.name})
+    category_data = json.dumps({"code": category.code, "name": category.name, "reasons": category.reasons})
     cursor.execute("INSERT INTO categorys (category_data) VALUES (?)", (category_data,))
     connection.commit()
     category_id = cursor.lastrowid
@@ -397,7 +450,7 @@ def get_category_by_id(category_id: int):
 def update_category(category_id: int, category: CategoryCreate):
     connection = create_connection()
     cursor = connection.cursor()
-    category_data = json.dumps({"code": category.code, "name": category.name})
+    category_data = json.dumps({"code": category.code, "name": category.name, "reasons": category.reasons})
     cursor.execute("UPDATE categorys SET category_data = ? WHERE id = ?", (category_data, category_id))
     connection.commit()
     connection.close()
@@ -598,6 +651,22 @@ def delete_student_endpoint(student_id: int):
     get_student_by_id(student_id)
     delete_student(student_id)
     return {"message": "Student deleted successfully"}
+
+@app.get("/groups/")
+def get_all_groups_endpoint():
+    all_groups = get_all_groups()
+    return {"groups": all_groups}
+
+@app.post("/groups/")
+def create_group_endpoint(group: GroupCreate):
+    group_id = create_group(group)
+    return {"id": group_id, "name": group.name, "list": group.list}
+
+@app.delete("/groups/{group_id}")
+def delete_group_endpoint(group_id: int):
+    delete_group(group_id)
+    return {"message": "Group deleted successfully"}
+
 @app.get("/categorys/")
 def get_all_categorys_endpoint():
     all_categorys = get_all_categorys()
@@ -606,7 +675,7 @@ def get_all_categorys_endpoint():
 @app.post("/categorys/")
 def create_category_endpoint(category: CategoryCreate):
     category_id = create_category(category)
-    return {"id": category_id, "code": category.code, "name": category.name}
+    return {"id": category_id, "code": category.code, "name": category.name, "reasons": category.reasons}
 
 @app.get("/categorys/{category_id}")
 def get_category(category_id: int):

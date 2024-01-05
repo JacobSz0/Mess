@@ -7,7 +7,6 @@ import { Chart } from "react-google-charts";
 
 
 function Stats() {
-
   const [list, setList] = useState([]);
   const [currentList, setCurrentList] = useState([]);
   const [students, setStudents] = useState([]);
@@ -17,9 +16,9 @@ function Stats() {
   const [category, setCategory] = useState([]);
   const [code, setCode] = useState("N/A");
   const [grade, setGrade] = useState("N/A");
-  const [chartType, setChartType] = useState("N/A");
+  const [chartType, setChartType] = useState("Category");
   const [chartOptions, setChartOptions] = useState({
-    title: "My Daily Activities",
+    title: "Stats",
     is3D: true,
   });
   const [chartData, setChartData] = useState([
@@ -32,6 +31,70 @@ function Stats() {
   ]);
 
 
+  const updateChartData = () => {
+    if(chartType==="Category"){
+      var workingdata2=[["Task", "Hours per Day"]]
+      for (var i of category){
+        var timeTotal=0
+        for (var j of currentList){
+          if (i.code===j.humanCode){
+            timeTotal+=j.timeDiff
+
+          }
+        }
+        workingdata2.push([i.name,timeTotal])
+        console.log(workingdata2)
+      }
+      setChartData(workingdata2)
+      console.log(workingdata2)
+    }
+    else if(chartType==="Student"){
+      var studentTimeTotal={}
+      for (var i of currentList){
+        if (i.name in studentTimeTotal){
+          studentTimeTotal[i.name]=studentTimeTotal[i.name]+i.timeDiff
+        }
+        else{
+          studentTimeTotal[i.name]=i.timeDiff
+        }
+      }
+      const resultArray = Object.entries(studentTimeTotal).map(([key, value]) => [key, value]);
+      resultArray.unshift(["Task", "Hours per Day"])
+      setChartData(resultArray)
+    }
+    else if (chartType==="Grade"){
+      var workingdata2=[["Task", "Hours per Day"]]
+      var gradeList=["K","1","2","3","4","5"]
+      for (var i of gradeList){
+        var timeTotal=0
+        for (var j of currentList){
+          if (i===j.grade){
+            timeTotal+=j.timeDiff
+          }
+        }
+        workingdata2.push([i,timeTotal])
+        console.log(workingdata2)
+      }
+      setChartData(workingdata2)
+    }
+  }
+
+  function refreshSearch(){
+    var newList=[]
+    for (var i of list){
+      if(i.grade===grade || grade==="N/A"){
+        if (i.humanCode===code || code=="N/A"){
+          if (start<=i.date && end>=i.date){
+            if (i.name===currentStudent || currentStudent===""){
+              newList.push(i)
+            }
+          }
+        }
+      }
+    }
+    setCurrentList(newList)
+  }
+
   async function fetchData() {
     const response = await fetch("http://localhost:8000/appointments");
     if (response.ok) {
@@ -42,7 +105,7 @@ function Stats() {
         var humanEnd=dayjs(i.end).format('MM')+"/"+dayjs(i.end).format('DD')+"/"+dayjs(i.end).format('YY')+" "+dayjs(i.end).format('h:mm A  ')
         var humanCode=i["category"].split(" - ")[0]
         var date=parseInt(dayjs(i.start).format("YYYYMMDD"))
-        var timeDiff=dayjs(i.end).diff(dayjs(i.start), "minute")
+        var timeDiff=Math.abs(dayjs(i.end).diff(dayjs(i.start), "minute"))
         i["humanName"]=humanName
         i["humanStart"]=humanStart
         i["humanEnd"]=humanEnd
@@ -90,65 +153,17 @@ function Stats() {
   function handleCurrentStudentChange(event){
     console.log(event.target.value)
     setCurrentStudent(event.target.value)
+    setChartType("Category")
     console.log(currentStudent)
   }
 
-  const updateChartData = () => {
-    if(chartType==="Category"){
-      var workingdata2=[["Task", "Hours per Day"]]
-      for (var i of category){
-        var timeTotal=0
-        for (var j of currentList){
-          if (i.code===j.humanCode){
-            timeTotal+=j.timeDiff
-          }
-        }
-        workingdata2.push([i.name,timeTotal])
-        console.log(workingdata2)
-      }
-      setChartData(workingdata2)
-      console.log(workingdata2)
-    }
-    else if(chartType==="Student"){
-      var studentTimeTotal={}
-      for (var i of currentList){
-        if (i.name in studentTimeTotal){
-          studentTimeTotal[i.name]=studentTimeTotal[i.name]+i.timeDiff
-        }
-        else{
-          studentTimeTotal[i.name]=i.timeDiff
-        }
-      }
-      const resultArray = Object.entries(studentTimeTotal).map(([key, value]) => [key, value]);
-      resultArray.unshift(["Task", "Hours per Day"])
-      setChartData(resultArray)
-    }
-  }
-
-  function refreshSearch(){
-    var newList=[]
-    for (var i of list){
-      console.log("start")
-      if(i.grade===grade || grade==="N/A"){
-        if (i.humanCode===code || code=="N/A"){
-          if (start<=i.date && end>=i.date){
-            if (i.name===currentStudent || currentStudent===""){
-              newList.push(i)
-            }
-          }
-        }
-      }
-    }
-    setCurrentList(newList)
-  }
-
   useEffect(() => {
-    fetchData()
+    fetchData();
   }, []);
 
   useEffect(() => {
     refreshSearch()
-  }, [code, currentStudent, grade, chartType]);
+  }, [code, currentStudent, grade, chartType, list, students, category]);
 
   useEffect(() => {
     updateChartData()
@@ -169,21 +184,15 @@ function Stats() {
         <input autoComplete="on" list="suggestions" value={currentStudent} onChange={handleCurrentStudentChange} placeholder="Select Student"/>
         <span>{" Grade: "}</span>
         <select name="grade" value={grade} onChange={handleGrade} placeholder="Select Category">
-        <option>N/A</option>
-        <option>K</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-        <option>4</option>
-        <option>5</option>
+          <option>N/A</option>
+          <option>K</option>
+          <option>1</option>
+          <option>2</option>
+          <option>3</option>
+          <option>4</option>
+          <option>5</option>
         </select>
-        <div className="time-border">
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DateField label="Start" defaultValue={dayjs().subtract(1, 'year')} onChange={(newValue) => setStart(parseInt(dayjs(newValue).format("YYYYMMDD")))}/>
-          <DateField label="End" defaultValue={dayjs()} onChange={(newValue) => setEnd(parseInt(dayjs(newValue).format("YYYYMMDD")))}/>
-        </LocalizationProvider>
-        <button onClick={refreshSearch}>Set Date Window</button>
-        </div>
+        <span>{" Category: "}</span>
         <select name="category" value={code} onChange={handleCode} placeholder="Select Category">
         <option>N/A</option>
           {category.map((i, index) => {
@@ -194,12 +203,19 @@ function Stats() {
         </select>
         <span>{" Chart Metric: "}</span>
         <select name="chart" value={chartType} onChange={handleChartType} placeholder="Select Category">
-        <option>N/A</option>
-        <option>Category</option>
-        <option>Student</option>
-        <option>Grade</option>
+          <option>Category</option>
+          <option>Student</option>
+          <option>Grade</option>
         </select>
       </div>
+        <div className="time-border">
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DateField label="Start" defaultValue={dayjs().subtract(1, 'year')} onChange={(newValue) => setStart(parseInt(dayjs(newValue).format("YYYYMMDD")))}/>
+          <DateField label="End" defaultValue={dayjs()} onChange={(newValue) => setEnd(parseInt(dayjs(newValue).format("YYYYMMDD")))}/>
+        </LocalizationProvider>
+        {" "}
+        <button onClick={refreshSearch}>Set Date Window</button>
+        </div>
       <br></br>
 
       <Chart

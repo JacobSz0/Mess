@@ -496,6 +496,7 @@ input:checked + .slider:before {
   width:150px;
   height: auto;
 }
+
 .help2{
   width:250px;
   height: auto;
@@ -551,4 +552,36 @@ input:checked + .slider:before {
 
 .edit-grade{
   width: 60px;
+}
+
+.bold{
+  font-weight: 600;
+}
+
+.no-link{
+  color: rgb(0, 0, 0);
+  text-decoration: inherit
+}
+
+.status-bar{
+  padding-left: 10%;
+  padding-right: 10%
+}
+
+.bg-fail{
+  background-color: rgb(188, 0, 0);
+}
+
+.name-group{
+  max-width: 300px;
+  display: inline-block;
+}
+
+.notes{
+  display: inline-block;
+  position: inherit;
+}
+
+.drop-down{
+  color:rgb(0, 0, 0)
 }
